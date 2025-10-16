@@ -171,6 +171,7 @@ with tabs[1]:
             "Cons": ["Fast-paced", "High workload", "Low pay"],
             "Company_Name": ["Alpha", "Beta", "Gamma"]
         })
+
         uploaded_file = BytesIO()
         sample.to_csv(uploaded_file, index=False)
         uploaded_file.seek(0)
@@ -196,7 +197,34 @@ with tabs[1]:
             df = None
     else:
         df = None
-        
 
+    if run:
+        if df is None:
+            st.warning("Upload a dataset or choose the example dataset first")
+        elif query.strip() == "":
+            st.warning("Enter a job preference query first.")
+        else:
+            with st.spinner("Running recommendations"):
+                time.sleep(.6)
+                res = recommend_companies(df, query, top=top)
+            st.markdown("### Top Recommendations")
+            for r in res:
+                st.markdown(f"**{r['company']}** — *{r['job_title']}*  ·  Match: `{r['similarity']}`")
+                if show_explain:
+                    st.markdown(f"<div class='bot'>{r['explanation']}</div>", unsafe_allow_html=True)
 
+            sim_df = pd.DataFrame(res)
+            fig = px.bar(sim_df, y="company", x="similarity", orientation="h", color="similarity", range_x=[0, 1])
+            st.plotly_chart(fig, use_container_width=True)
+
+with tabs[2]:
+    st.header("Chat with JobMatchAI")
+    if "message" not in st.session_state:
+        st.session_state.message = []
+    # chat display
+    chat_col1, chat_col2 = st.columns([3, 1])
+    with chat_col1:
+        message = st.text_input("Ask me about jobs, companies, or your recommendations", key="chat_input")
+        if st.button("Send", key="send_btn"):
+            if message.strip
 
