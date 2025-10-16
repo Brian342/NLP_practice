@@ -121,6 +121,71 @@ with st.sidebar:
     st.markdown("**Quick Settings**")
     top = st.slider("Number of Recommendation", 3, 12, 7)
     show_explain = st.checkbox("Show explanation", value=True)
+
+    # --- THEME TOGGLE ---
+    st.markdown("### 🌓 Theme")
+    st.markdown("""
+    <style>
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255,255,255,0.04);
+      padding: 8px 14px;
+      border-radius: 12px;
+      margin-top: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .toggle-switch {
+      width: 42px;
+      height: 22px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 999px;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+    .toggle-ball {
+      width: 18px;
+      height: 18px;
+      background: white;
+      border-radius: 50%;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      transition: all 0.3s ease;
+    }
+    [data-theme='dark'] .toggle-ball {
+      transform: translateX(20px);
+      background: linear-gradient(45deg, #06b6d4, #7c3aed);
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # toggle logic
+    if "theme_mode" not in st.session_state:
+        st.session_state.theme_mode = "auto"
+
+    colA, colB, colC = st.columns([1, 1, 1])
+    with colA:
+        if st.button("☀️ Light"):
+            st.session_state.theme_mode = "light"
+    with colB:
+        if st.button("🌙 Dark"):
+            st.session_state.theme_mode = "dark"
+    with colC:
+        if st.button("⚙️ Auto"):
+            st.session_state.theme_mode = "auto"
+
+    if st.session_state.theme_mode == "light":
+        st.markdown("<script>document.documentElement.setAttribute('data-theme', 'light');</script>",
+                    unsafe_allow_html=True)
+    elif st.session_state.theme_mode == "dark":
+        st.markdown("<script>document.documentElement.setAttribute('data-theme', 'dark');</script>",
+                    unsafe_allow_html=True)
+    else:
+        st.markdown(AUTO_THEME_SCRIPT, unsafe_allow_html=True)
+
     st.markdown("------")
     st.caption("Built w/ spacy + Sentence-Transformers . prototype")
 
@@ -231,9 +296,51 @@ with tabs[2]:
             if message.strip():
                 st.session_state.message.append({"role": "user", "text": message})
                 reply = chat_response(message, st.session_state.message)
-                st.session_state.message.append({"role":"bot", "text":reply})
+                st.session_state.message.append({"role": "bot", "text": reply})
 
     with chat_col2:
-        st.markdown("<div class='card'><b>Chat tips</b><ul><li>Ask for remote internships</li><li>Request explanations</li></ul></div>", unsafe_allow_html=True)
+        st.markdown(
+            "<div class='card'><b>Chat tips</b><ul><li>Ask for remote internships</li><li>Request explanations</li></ul></div>",
+            unsafe_allow_html=True)
 
-    
+    # render history
+    for m in st.session_state.message[::-1]:
+        if m["role"] == "user":
+            st.markdown(
+                f"<div style='text-align:right'><div class='pill'>You</div><div style='margin-top:6px'>{m['text']}</div></div>",
+                unsafe_allow_html=True)
+        else:
+            st.markdown(f"<div class='bot'><b>JobMatchAI</b><div style='margin-top:6px'>{m['text']}</div></div>",
+                        unsafe_allow_html=True)
+
+with tabs[3]:
+    st.header("Insights & Charts")
+    st.markdown("Visualize dataset-level insights (from uploaded dataset)")
+
+    if 'df' in locals() and df is not None:
+        # Rating distribution
+        st.subheader("Rating Distribution")
+        fig = px.histogram(df, x="Job Rating", nbins=10)
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Role Type counts
+        st.subheader("Role Type Counts")
+        role_counts = (
+            df['Role_Type']
+            .value_counts()
+            .reset_index()
+        )
+
+        fig2 = px.bar(role_counts, x="Role_Type", y="count", color="Role_Type", title="Role Type Distribution")
+        st.plotly_chart(fig2, use_container_width=True)
+
+    else:
+        st.info("Upload a dataset to see insights.")
+
+with tabs[4]:
+    st.header("Settings & About")
+    st.markdown("Model info Configuration")
+    st.markdown("- Model: sentence-transformers (replace with your model)\n- Explainability: token overlap + token similarity heatmaps\n- Embeddings are recommended to be cached (FAISS/Annoy) for production")
+    if st.button("Clear chat & cache"):
+        st.session_state.message = []
+        st.experimental_rerun()
