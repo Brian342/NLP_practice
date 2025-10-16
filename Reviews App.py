@@ -181,7 +181,9 @@ with tabs[1]:
     run = st.button("Run Query")
 
     with col2:
-        st.markdown("<div class='card'><h4>Upload tips</h4><ul><li>Use Google Form export CSV</li><li>Ensure columns: Pros, Cons, Role_Type, Job Rating</li><li>We auto-clean text</li></ul></div>", unsafe_allow_html=True)
+        st.markdown(
+            "<div class='card'><h4>Upload tips</h4><ul><li>Use Google Form export CSV</li><li>Ensure columns: Pros, Cons, Role_Type, Job Rating</li><li>We auto-clean text</li></ul></div>",
+            unsafe_allow_html=True)
 
     # precess upload
     if uploaded_file is not None:
@@ -226,5 +228,12 @@ with tabs[2]:
     with chat_col1:
         message = st.text_input("Ask me about jobs, companies, or your recommendations", key="chat_input")
         if st.button("Send", key="send_btn"):
-            if message.strip
+            if message.strip():
+                st.session_state.message.append({"role": "user", "text": message})
+                reply = chat_response(message, st.session_state.message)
+                st.session_state.message.append({"role":"bot", "text":reply})
 
+    with chat_col2:
+        st.markdown("<div class='card'><b>Chat tips</b><ul><li>Ask for remote internships</li><li>Request explanations</li></ul></div>", unsafe_allow_html=True)
+
+    
