@@ -155,3 +155,48 @@ with c4:
     st.markdown(
         "<div class='card'><h4 style='margin:0'>Queries/day</h4><div style='font-size:22px;font-weight:700'>57</div></div>",
         unsafe_allow_html=True)
+
+with tabs[1]:
+    st.header("Upload Google Form (CSV / XLSX) & run a query")
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        uploaded_file = st.file_uploader("Uploaded Google Form CSV or Excel", type=["csv", "xlsx"])
+        st.markdown("or try an example dataset below")
+
+        sample = pd.DataFrame({
+            "Job Title": ["Data Intern", "ML Research Intern", "Business Analyst"],
+            "Job Rating": [4.2, 4.6, 3.9],
+            "Role_Type": ["internship", "internship", "employee"],
+            "Pros": ["Remote work, good pay", "Great mentorship, remote", "Flexible hours"],
+            "Cons": ["Fast-paced", "High workload", "Low pay"],
+            "Company_Name": ["Alpha", "Beta", "Gamma"]
+        })
+        uploaded_file = BytesIO()
+        sample.to_csv(uploaded_file, index=False)
+        uploaded_file.seek(0)
+        st.success("Example dataset loaded (temporary) - press run query")
+
+    query = st.text_input("Job Preferences (e.g. 'remote internship pays more')", value="")
+    run = st.button("Run Query")
+
+    with col2:
+        st.markdown("<div class='card'><h4>Upload tips</h4><ul><li>Use Google Form export CSV</li><li>Ensure columns: Pros, Cons, Role_Type, Job Rating</li><li>We auto-clean text</li></ul></div>", unsafe_allow_html=True)
+
+    # precess upload
+    if uploaded_file is not None:
+        try:
+            if isinstance(uploaded_file, BytesIO) or uploaded_file.name.endswith(".csv"):
+                df = pd.read_csv(uploaded_file)
+            else:
+                df = pd.read_excel(uploaded_file)
+            st.success(f"Loaded dataset -{len(df)} rows")
+            st.dataframe(df.head(5))
+        except Exception as e:
+            st.error("Could not read file: " + str(e))
+            df = None
+    else:
+        df = None
+        
+
+
+
