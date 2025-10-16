@@ -111,3 +111,47 @@ section[data-testid="stSidebar"] .css-1d391kg {
 
 st.markdown(AUTO_THEME_SCRIPT, unsafe_allow_html=True)
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+
+with st.sidebar:
+    st.markdown(
+        "<div style='display:flex;align-items:center;gap:10px'><div class='logo-circle'>JM</div><div><h3 style='margin:0'>JobMatchAI</h3><div style='font-size:12px;color:gray'>NLP · Transformers · Explainability</div></div></div>",
+        unsafe_allow_html=True)
+    st.markdown("------")
+    email = st.text_input("Your email (option)", placeholder="you@example.com")
+    st.markdown("**Quick Settings**")
+    top = st.slider("Number of Recommendation", 3, 12, 7)
+    show_explain = st.checkbox("Show explanation", value=True)
+    st.markdown("------")
+    st.caption("Built w/ spacy + Sentence-Transformers . prototype")
+
+tabs = st.tabs(["Dashboard", "Upload & Query", "Chatbot", "Insight", "Settings"])
+
+with tabs[0]:
+    st.markdown(
+        "<div style='display:flex;justify-content:space-between;align-items:center'><div><h1 style='margin:0'>JobMatchAI</h1><div style='color:gray'>AI-powered job recommender — semantic search on reviews</div></div></div>",
+        unsafe_allow_html=True)
+    st.write("")
+    c1, c2, c3, c4 = st.columns([1.8, 1, 1, 1])
+    with c1:
+        st.markdown(
+            "<div class='card'><h4 style='margin:0'>Top Match Preview</h4><div style='color:gray;margin-top:6px'>Quick glance at what users search for</div></div>",
+            unsafe_allow_html=True)
+        st.write("")
+    st.dataframe(pd.DataFrame({
+        "Company": ["Company A", "Company B", "Company C"],
+        "Top Role": ["Data Analyst Intern", "ML Engineer", "Product Analyst"],
+        "Avg Rating": [4.4, 4.1, 3.9]
+    }))
+
+with c2:
+    st.markdown(
+        "<div class='card'><h4 style='margin:0'>Companies</h4><div style='font-size:22px;font-weight:700'>120</div></div>",
+        unsafe_allow_html=True)
+with c3:
+    st.markdown(
+        "<div class='card'><h4 style='margin:0'>Avg Rating</h4><div style='font-size:22px;font-weight:700'>4.1</div></div>",
+        unsafe_allow_html=True)
+with c4:
+    st.markdown(
+        "<div class='card'><h4 style='margin:0'>Queries/day</h4><div style='font-size:22px;font-weight:700'>57</div></div>",
+        unsafe_allow_html=True)
