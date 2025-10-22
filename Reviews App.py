@@ -18,7 +18,6 @@ def recommend_companies(df, user_query, top=7):
     :param user_query: string
     :return: list of dicts with keys: company, job_title, similarity, explanation
     """
-
     res = []
     for i in range(min(top, 7)):
         res.append({
@@ -340,7 +339,8 @@ with tabs[3]:
 with tabs[4]:
     st.header("Settings & About")
     st.markdown("Model info Configuration")
-    st.markdown("- Model: sentence-transformers (replace with your model)\n- Explainability: token overlap + token similarity heatmaps\n- Embeddings are recommended to be cached (FAISS/Annoy) for production")
+    st.markdown(
+        "- Model: sentence-transformers (replace with your model)\n- Explainability: token overlap + token similarity heatmaps\n- Embeddings are recommended to be cached (FAISS/Annoy) for production")
     if st.button("Clear chat & cache"):
         st.session_state.message = []
         st.experimental_rerun()
