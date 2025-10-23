@@ -4,27 +4,49 @@ import pandas as pd
 import plotly.express as px
 import time
 import random
+import pickle
 from io import BytesIO
 from PIL import Image
+from sentence_transformers import SentenceTransformer, util
 
 
-def reload_model():
-    return None
+@st.cache_resource
+def load_model():
+    return SentenceTransformer("all-MiniLM-L6-v2")
 
 
-def recommend_companies(df, user_query, top=7):
+@st.cache_data
+def load_data():
+    with open("Best_model.pkl", 'rb') as f:
+        data = pickle.load(f)
+        return data
+
+
+model = load_model()
+df_transform = load_data()
+
+
+def recommend_companies(df_transform, user_query, top=5):
     """
     :param df: uploaded job
     :param user_query: string
     :return: list of dicts with keys: company, job_title, similarity, explanation
     """
+    query_emb = model.encode(user_query, convert_to_tensor=True)
+    company_emb = model.encode(df_transform["combined_text"].tolist(), convert_to_tensor=True)
+    similarities = util.cos_sim(query_emb, company_emb)[0].cpu().numpy()
+
+    df_transform["query_similarity"] = similarities
+    top_matches = df_transform.sort_values("query_similarity", ascending=False).head(top)
+
+    print(type(top_matches))
     res = []
-    for i in range(min(top, 7)):
+    for _, row in top_matches.iterrows():
         res.append({
-            "Company": f"company{i + 1}",
-            "Job Title": "Data Analyst Intern",
-            "Similarity": round(random.uniform(.55, .95), 3),
-            "Explanation": "Matched on:remote, internship,pay"
+            "Company": row["Company_Name"],
+            "Rating": round(row["Cleaned Rating"], 2),
+            "Similarity": round(row["query_similarity"], 3),
+            "Cons": row["Cons Clean"][:150]
         })
     return res
 
@@ -195,30 +217,45 @@ with tabs[0]:
         "<div style='display:flex;justify-content:space-between;align-items:center'><div><h1 style='margin:0'>JobMatchAI</h1><div style='color:gray'>AI-powered job recommender — semantic search on reviews</div></div></div>",
         unsafe_allow_html=True)
     st.write("")
-    c1, c2, c3, c4 = st.columns([1.8, 1, 1, 1])
-    with c1:
-        st.markdown(
-            "<div class='card'><h4 style='margin:0'>Top Match Preview</h4><div style='color:gray;margin-top:6px'>Quick glance at what users search for</div></div>",
-            unsafe_allow_html=True)
-        st.write("")
-    st.dataframe(pd.DataFrame({
-        "Company": ["Company A", "Company B", "Company C"],
-        "Top Role": ["Data Analyst Intern", "ML Engineer", "Product Analyst"],
-        "Avg Rating": [4.4, 4.1, 3.9]
+    # Example: show top companies by average rating
+    top_companies = (
+        df_transform.groupby("Company_Name")["Cleaned Rating"]
+        .mean()
+        .reset_index()
+        .sort_values(by="Cleaned Rating", ascending=False)
+        .head(3)
+    )
+
+    st.dataframe(top_companies.rename(columns={
+        "Company_Name": "Company",
+        "Cleaned Rating": "Avg Rating"
     }))
 
-with c2:
-    st.markdown(
-        "<div class='card'><h4 style='margin:0'>Companies</h4><div style='font-size:22px;font-weight:700'>120</div></div>",
-        unsafe_allow_html=True)
-with c3:
-    st.markdown(
-        "<div class='card'><h4 style='margin:0'>Avg Rating</h4><div style='font-size:22px;font-weight:700'>4.1</div></div>",
-        unsafe_allow_html=True)
-with c4:
-    st.markdown(
-        "<div class='card'><h4 style='margin:0'>Queries/day</h4><div style='font-size:22px;font-weight:700'>57</div></div>",
-        unsafe_allow_html=True)
+#     c1, c2, c3, c4 = st.columns([1.8, 1, 1, 1])
+#     with c1:
+#         st.markdown(
+#             "<div class='card'><h4 style='margin:0'>Top Match Preview</h4><div style='color:gray;margin-top:6px'>Quick glance at what users search for</div></div>",
+#             unsafe_allow_html=True)
+#         st.write("")
+#     st.dataframe(pd.DataFrame({
+#         "Company": ["Company A", "Company B", "Company C"],
+#         "Top Role": ["Data Analyst Intern", "ML Engineer", "Product Analyst"],
+#         "Avg Rating": [4.4, 4.1, 3.9]
+#     }))
+#
+# with c2:
+#     st.markdown(
+#         "<div class='card'><h4 style='margin:0'>Companies</h4><div style='font-size:22px;font-weight:700'>120</div></div>",
+#         unsafe_allow_html=True)
+# with c3:
+#     st.markdown(
+#         "<div class='card'><h4 style='margin:0'>Avg Rating</h4><div style='font-size:22px;font-weight:700'>4.1</div></div>",
+#         unsafe_allow_html=True)
+# with c4:
+#     st.markdown(
+#         "<div class='card'><h4 style='margin:0'>Queries/day</h4><div style='font-size:22px;font-weight:700'>57</div></div>",
+#         unsafe_allow_html=True)
+
 
 with tabs[1]:
     st.header("Upload Google Form (CSV / XLSX) & run a query")
@@ -265,22 +302,34 @@ with tabs[1]:
         df = None
 
     if run:
-        if df is None:
-            st.warning("Upload a dataset or choose the example dataset first")
-        elif query.strip() == "":
-            st.warning("Enter a job preference query first.")
+        if query.strip() == "":
+            st.warning("Enter a Job Preference First")
         else:
-            with st.spinner("Running recommendations"):
+            with st.spinner("Finding your Best Company Matches ..."):
                 time.sleep(.6)
-                res = recommend_companies(df, query, top=top)
+                res = recommend_companies(df_transform, query, top=top)
+
             st.markdown("### Top Recommendations")
             for r in res:
-                st.markdown(f"**{r['company']}** — *{r['job_title']}*  ·  Match: `{r['similarity']}`")
-                if show_explain:
-                    st.markdown(f"<div class='bot'>{r['explanation']}</div>", unsafe_allow_html=True)
+                st.markdown(f"""
+                        **{r['Company']}**
+                        -  Rating: `{r['Rating']}`
+                        -  Similarity: `{r['Similarity']}`
+                        -  Cons: {r['Cons']}...
+                        ---
+                        """)
 
             sim_df = pd.DataFrame(res)
-            fig = px.bar(sim_df, y="company", x="similarity", orientation="h", color="similarity", range_x=[0, 1])
+            fig = px.bar(
+                sim_df,
+                y="Company",
+                x="Similarity",
+                orientation="h",
+                color="Similarity",
+                range_x=[0, 1],
+                title="Top Recommended Companies"
+            )
+
             st.plotly_chart(fig, use_container_width=True)
 
 with tabs[2]:
