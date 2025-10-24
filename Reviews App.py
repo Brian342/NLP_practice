@@ -46,6 +46,7 @@ def recommend_companies(df_transform, user_query, top=5):
             "Company": row["Company_Name"],
             "Rating": round(row["Cleaned Rating"], 2),
             "Similarity": round(row["query_similarity"], 3),
+            "Pros": row["Pros Clean"][:150],
             "Cons": row["Cons Clean"][:150]
         })
     return res
@@ -214,48 +215,84 @@ tabs = st.tabs(["Dashboard", "Upload & Query", "Chatbot", "Insight", "Settings"]
 
 with tabs[0]:
     st.markdown(
-        "<div style='display:flex;justify-content:space-between;align-items:center'><div><h1 style='margin:0'>JobMatchAI</h1><div style='color:gray'>AI-powered job recommender — semantic search on reviews</div></div></div>",
-        unsafe_allow_html=True)
-    st.write("")
-    # Example: show top companies by average rating
-    top_companies = (
-        df_transform.groupby("Company_Name")["Cleaned Rating"]
-        .mean()
-        .reset_index()
-        .sort_values(by="Cleaned Rating", ascending=False)
-        .head(3)
+        """
+        <div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:20px'>
+            <div>
+                <h1 style='margin:0;background:linear-gradient(90deg,#06b6d4,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;'>
+                    JobMatchAI
+                </h1>
+                <div style='color:gray;font-size:15px;'>AI-powered job recommender — semantic search on reviews</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
-    st.dataframe(top_companies.rename(columns={
-        "Company_Name": "Company",
-        "Cleaned Rating": "Avg Rating"
-    }))
+    # --- Stats cards ---
+    st.markdown("<div style='margin-bottom:10px'></div>", unsafe_allow_html=True)
+    c1, c2, c3, c4 = st.columns([1.8, 1, 1, 1])
 
-#     c1, c2, c3, c4 = st.columns([1.8, 1, 1, 1])
-#     with c1:
-#         st.markdown(
-#             "<div class='card'><h4 style='margin:0'>Top Match Preview</h4><div style='color:gray;margin-top:6px'>Quick glance at what users search for</div></div>",
-#             unsafe_allow_html=True)
-#         st.write("")
-#     st.dataframe(pd.DataFrame({
-#         "Company": ["Company A", "Company B", "Company C"],
-#         "Top Role": ["Data Analyst Intern", "ML Engineer", "Product Analyst"],
-#         "Avg Rating": [4.4, 4.1, 3.9]
-#     }))
-#
-# with c2:
-#     st.markdown(
-#         "<div class='card'><h4 style='margin:0'>Companies</h4><div style='font-size:22px;font-weight:700'>120</div></div>",
-#         unsafe_allow_html=True)
-# with c3:
-#     st.markdown(
-#         "<div class='card'><h4 style='margin:0'>Avg Rating</h4><div style='font-size:22px;font-weight:700'>4.1</div></div>",
-#         unsafe_allow_html=True)
-# with c4:
-#     st.markdown(
-#         "<div class='card'><h4 style='margin:0'>Queries/day</h4><div style='font-size:22px;font-weight:700'>57</div></div>",
-#         unsafe_allow_html=True)
+    with c1:
+        st.markdown(
+            "<div class='card'><h4 style='margin:0'>Top Match Preview</h4>"
+            "<div style='color:gray;margin-top:6px'>Quick glance at what users search for</div></div>",
+            unsafe_allow_html=True
+        )
 
+    with c2:
+        st.markdown(
+            "<div class='card' style='text-align:center'><h4 style='margin:0'>Companies</h4>"
+            "<div style='font-size:28px;font-weight:700;color:#06b6d4'>120</div></div>",
+            unsafe_allow_html=True
+        )
+    with c3:
+        st.markdown(
+            "<div class='card' style='text-align:center'><h4 style='margin:0'>Avg Rating</h4>"
+            "<div style='font-size:28px;font-weight:700;color:#10b981'>4.1</div></div>",
+            unsafe_allow_html=True
+        )
+    with c4:
+        st.markdown(
+            "<div class='card' style='text-align:center'><h4 style='margin:0'>Queries/day</h4>"
+            "<div style='font-size:28px;font-weight:700;color:#f59e0b'>57</div></div>",
+            unsafe_allow_html=True
+        )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # --- Top Companies Data ---
+    st.subheader("Top Companies Overview")
+
+    top_companies = (
+        df_transform.groupby("Company_Name")
+        .agg({
+            "Cleaned Rating": "mean",
+            "Employment_Type": lambda x: x.mode().iloc[0] if not x.mode().empty else "N/A",
+            "Role_Type": lambda x: x.mode().iloc[0] if not x.mode().empty else "N/A",
+            "Duration": "first",
+            "Job Title Clean": lambda x: ', '.join(x.head(2)),
+            "Pros Clean": lambda x: x.iloc[0][:100] + "..." if isinstance(x.iloc[0], str) else "",
+            "Cons Clean": lambda x: x.iloc[0][:100] + "..." if isinstance(x.iloc[0], str) else ""
+        })
+        .reset_index()
+        .sort_values(by="Cleaned Rating", ascending=False)
+        .head(10)
+    )
+
+    top_companies["Cleaned Rating"] = top_companies["Cleaned Rating"].round(2)
+
+    # Add a better column order
+    top_companies = top_companies[
+        ["Company_Name", "Cleaned Rating", "Employment_Type", "Role_Type", "Duration", "Job Title Clean", "Pros Clean",
+         "Cons Clean"]
+    ]
+
+    # Expand table full width
+    st.dataframe(
+        top_companies.reset_index(drop=True),
+        use_container_width=True,
+        height=325,
+    )
 
 with tabs[1]:
     st.header("Upload Google Form (CSV / XLSX) & run a query")
@@ -315,6 +352,7 @@ with tabs[1]:
                         **{r['Company']}**
                         -  Rating: `{r['Rating']}`
                         -  Similarity: `{r['Similarity']}`
+                        -  Pros: `{r['Pros']}`...
                         -  Cons: {r['Cons']}...
                         ---
                         """)
