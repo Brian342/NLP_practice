@@ -5,8 +5,9 @@ import plotly.express as px
 import time
 import random
 import pickle
-from io import BytesIO
 from PIL import Image
+from io import BytesIO
+from openai import OpenAI
 from sentence_transformers import SentenceTransformer, util
 
 
@@ -303,14 +304,6 @@ with tabs[1]:
 
         sample = df_transform[["Company_Name", "Cleaned Rating", "Role_Type", "Pros Clean",
                                "Cons Clean"]]
-        # ({
-        #     "Job Title": ["Data Intern", "ML Research Intern", "Business Analyst"],
-        #     "Job Rating": [4.2, 4.6, 3.9],
-        #     "Role_Type": ["internship", "internship", "employee"],
-        #     "Pros": ["Remote work, good pay", "Great mentorship, remote", "Flexible hours"],
-        #     "Cons": ["Fast-paced", "High workload", "Low pay"],
-        #     "Company_Name": ["Alpha", "Beta", "Gamma"]
-        # })
 
         uploaded_file = BytesIO()
         sample.to_csv(uploaded_file, index=False)
@@ -364,7 +357,6 @@ with tabs[1]:
                 sim_df,
                 y="Company",
                 x="Similarity",
-                orientation="h",
                 color="Similarity",
                 range_x=[0, 1],
                 title="Top Recommended Companies"
@@ -413,14 +405,20 @@ with tabs[3]:
 
         # Role Type counts
         st.subheader("Role Type Counts")
-        role_counts = (
-            df['Role_Type']
-            .value_counts()
-            .reset_index()
-        )
+        # role_counts = (
+        #     df['Role_Type']
+        #     .value_counts()
+        #     .reset_index()
+        # )
+        role = df_transform['Role_Type'].value_counts().reset_index()
+        role.columns = ['Role_Type', 'Count']
 
-        fig2 = px.bar(role_counts, x="Role_Type", y="count", color="Role_Type", title="Role Type Distribution")
+        total_employee = role["Count"].sum()
+
+        fig2 = px.pie(role, values="Count", names="Role_Type", color_discrete_sequence=px.colors.qualitative.Set3, hole=.4)
         st.plotly_chart(fig2, use_container_width=True)
+
+
 
     else:
         st.info("Upload a dataset to see insights.")
