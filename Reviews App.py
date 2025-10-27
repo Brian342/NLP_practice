@@ -301,14 +301,16 @@ with tabs[1]:
         uploaded_file = st.file_uploader("Uploaded Google Form CSV or Excel", type=["csv", "xlsx"])
         st.markdown("or try an example dataset below")
 
-        sample = pd.DataFrame({
-            "Job Title": ["Data Intern", "ML Research Intern", "Business Analyst"],
-            "Job Rating": [4.2, 4.6, 3.9],
-            "Role_Type": ["internship", "internship", "employee"],
-            "Pros": ["Remote work, good pay", "Great mentorship, remote", "Flexible hours"],
-            "Cons": ["Fast-paced", "High workload", "Low pay"],
-            "Company_Name": ["Alpha", "Beta", "Gamma"]
-        })
+        sample = df_transform[["Company_Name", "Cleaned Rating", "Role_Type", "Pros Clean",
+                               "Cons Clean"]]
+        # ({
+        #     "Job Title": ["Data Intern", "ML Research Intern", "Business Analyst"],
+        #     "Job Rating": [4.2, 4.6, 3.9],
+        #     "Role_Type": ["internship", "internship", "employee"],
+        #     "Pros": ["Remote work, good pay", "Great mentorship, remote", "Flexible hours"],
+        #     "Cons": ["Fast-paced", "High workload", "Low pay"],
+        #     "Company_Name": ["Alpha", "Beta", "Gamma"]
+        # })
 
         uploaded_file = BytesIO()
         sample.to_csv(uploaded_file, index=False)
@@ -330,7 +332,7 @@ with tabs[1]:
                 df = pd.read_csv(uploaded_file)
             else:
                 df = pd.read_excel(uploaded_file)
-            st.success(f"Loaded dataset -{len(df)} rows")
+            st.success(f"Loaded dataset of System has-{len(df)} rows")
             st.dataframe(df.head(5))
         except Exception as e:
             st.error("Could not read file: " + str(e))
@@ -403,10 +405,10 @@ with tabs[3]:
     st.header("Insights & Charts")
     st.markdown("Visualize dataset-level insights (from uploaded dataset)")
 
-    if 'df' in locals() and df is not None:
+    if 'df' in locals() and df_transform is not None:
         # Rating distribution
         st.subheader("Rating Distribution")
-        fig = px.histogram(df, x="Job Rating", nbins=10)
+        fig = px.histogram(df, x="Cleaned Rating", nbins=10)
         st.plotly_chart(fig, use_container_width=True)
 
         # Role Type counts
