@@ -10,6 +10,8 @@ from io import BytesIO
 from openai import OpenAI
 from sentence_transformers import SentenceTransformer, util
 
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
 
 @st.cache_resource
 def load_model():
@@ -369,32 +371,69 @@ with tabs[1]:
 
 with tabs[2]:
     st.header("Chat with JobMatchAI")
+
     if "message" not in st.session_state:
-        st.session_state.message = []
+        st.session_state.message = [
+            {"role": "assistance", "content": "Hey I'm JobMatchAI. Ask me about companies, roles or job trends"}
+        ]
+    # display History
+    for msg in st.session_state.message:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
     # chat display
     chat_col1, chat_col2 = st.columns([3, 1])
+
     with chat_col1:
-        message = st.text_input("Ask me about jobs, companies, or your recommendations", key="chat_input")
-        if st.button("Send", key="send_btn"):
-            if message.strip():
-                st.session_state.message.append({"role": "user", "text": message})
-                reply = chat_response(message, st.session_state.message)
-                st.session_state.message.append({"role": "bot", "text": reply})
+        if prompt := st.chat_input("Ask about job recommendations, companies, or internship advice!!"):
+            st.session_state.message.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
+
+            # AI Response
+            with st.chat_message("Assistance"):
+                response = client.chat.completions.create(
+                    model = "gpt-4o-mini",
+                    message = st.session_state.message
+                )
+                reply = response.choices[0].message.content
+                st.markdown(reply)
+
+                # store assistance message
+            st.session_state.messages.append({"role": "assistant", "content": reply})
+
+        # message = st.text_input("Ask me about jobs, companies, or your recommendations", key="chat_input")
+        # if st.button("Send", key="send_btn"):
+        #     if message.strip():
+        #         st.session_state.message.append({"role": "user", "text": message})
+        #         reply = chat_response(message, st.session_state.message)
+        #         st.session_state.message.append({"role": "bot", "text": reply})
 
     with chat_col2:
         st.markdown(
-            "<div class='card'><b>Chat tips</b><ul><li>Ask for remote internships</li><li>Request explanations</li></ul></div>",
-            unsafe_allow_html=True)
+            """
+            <div class='card' style='padding:10px;border-radius:10px;background-color:#f7f9fc;'>
+                <b>💡 Chat Tips:</b>
+                <ul style='margin:5px 0 0 15px'>
+                    <li>Ask for remote internships</li>
+                    <li>Get company insights</li>
+                    <li>Find top-rated roles</li>
+                    <li>Ask for salary or rating analysis</li>
+                </ul>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-    # render history
-    for m in st.session_state.message[::-1]:
-        if m["role"] == "user":
-            st.markdown(
-                f"<div style='text-align:right'><div class='pill'>You</div><div style='margin-top:6px'>{m['text']}</div></div>",
-                unsafe_allow_html=True)
-        else:
-            st.markdown(f"<div class='bot'><b>JobMatchAI</b><div style='margin-top:6px'>{m['text']}</div></div>",
-                        unsafe_allow_html=True)
+    # # render history
+    # for m in st.session_state.message[::-1]:
+    #     if m["role"] == "user":
+    #         st.markdown(
+    #             f"<div style='text-align:right'><div class='pill'>You</div><div style='margin-top:6px'>{m['text']}</div></div>",
+    #             unsafe_allow_html=True)
+    #     else:
+    #         st.markdown(f"<div class='bot'><b>JobMatchAI</b><div style='margin-top:6px'>{m['text']}</div></div>",
+    #                     unsafe_allow_html=True)
 
 with tabs[3]:
     st.header("Insights & Charts")
@@ -418,7 +457,8 @@ with tabs[3]:
 
         total_employee = role["Count"].sum()
 
-        fig2 = px.pie(role, values="Count", names="Role_Type", color_discrete_sequence=px.colors.qualitative.Set3, hole=.4)
+        fig2 = px.pie(role, values="Count", names="Role_Type", color_discrete_sequence=px.colors.qualitative.Set3,
+                      hole=.4)
         st.plotly_chart(fig2, use_container_width=True)
 
 
