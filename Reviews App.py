@@ -29,6 +29,8 @@ df_transform = load_data()
 
 def recommend_companies(df_transform, user_query, top=5):
     """
+    :param top:
+    :param df_transform:
     :param df: uploaded job
     :param user_query: string
     :return: list of dicts with keys: company, job_title, similarity, explanation
@@ -358,6 +360,7 @@ with tabs[1]:
                 y="Company",
                 x="Similarity",
                 color="Similarity",
+                orientation="h",
                 range_x=[0, 1],
                 title="Top Recommended Companies"
             )
