@@ -8,6 +8,8 @@ def handle_commands(command, args=None):
         return analyze_role(args)
     elif command == "/company_info":
         return get_top_company(args)
+    else:
+        return
 
 
 def get_top_company():
