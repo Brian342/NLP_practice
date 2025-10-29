@@ -370,6 +370,19 @@ with tabs[1]:
             st.plotly_chart(fig, use_container_width=True)
 
 with tabs[2]:
+    context_df = (
+        df_transform.groupby("Company_Name")
+        .agg({
+            "Cleaned Rating": "mean",
+            "Employment_Type": lambda x: x.mode().iloc[0] if not x.mode().empty else "N/A",
+            "Role_Type": lambda x: x.mode().iloc[0] if not x.mode().empty else "N/A",
+            "Job Title Clean": lambda x: ', '.join(x.head(2))
+        })
+        .reset_index()
+        .sort_values(by="Cleaned Rating", ascending=False)
+        .head(20)
+    )
+    context_summary = context_df.to_string(index=False)
     st.header("Chat with JobMatchAI")
 
     if "message" not in st.session_state:
@@ -387,14 +400,27 @@ with tabs[2]:
     with chat_col1:
         if prompt := st.chat_input("Ask about job recommendations, companies, or internship advice!!"):
             st.session_state.message.append({"role": "user", "content": prompt})
+
+            contextual_prompt = f"""
+                    You are JobMatchAI, a helpful career insights assistant.
+
+                    Here’s some recent dataset info about companies, job titles, and ratings:
+                    {context_summary}
+
+                    Now answer the following user query in a clear, concise, data-driven way:
+                    {prompt}
+                    """
             with st.chat_message("user"):
                 st.markdown(prompt)
 
             # AI Response
-            with st.chat_message("Assistance"):
+            with st.chat_message("assistant"):
                 response = client.chat.completions.create(
-                    model = "gpt-4o-mini",
-                    message = st.session_state.message
+                    model="gpt-4o-mini",
+                    messages=[
+                    {"role": "system", "content": "You are JobMatchAI, a professional data analyst that gives job insights."},
+                    {"role": "user", "content": contextual_prompt}
+                ]
                 )
                 reply = response.choices[0].message.content
                 st.markdown(reply)
@@ -402,12 +428,6 @@ with tabs[2]:
                 # store assistance message
             st.session_state.messages.append({"role": "assistant", "content": reply})
 
-        # message = st.text_input("Ask me about jobs, companies, or your recommendations", key="chat_input")
-        # if st.button("Send", key="send_btn"):
-        #     if message.strip():
-        #         st.session_state.message.append({"role": "user", "text": message})
-        #         reply = chat_response(message, st.session_state.message)
-        #         st.session_state.message.append({"role": "bot", "text": reply})
 
     with chat_col2:
         st.markdown(
@@ -425,15 +445,6 @@ with tabs[2]:
             unsafe_allow_html=True
         )
 
-    # # render history
-    # for m in st.session_state.message[::-1]:
-    #     if m["role"] == "user":
-    #         st.markdown(
-    #             f"<div style='text-align:right'><div class='pill'>You</div><div style='margin-top:6px'>{m['text']}</div></div>",
-    #             unsafe_allow_html=True)
-    #     else:
-    #         st.markdown(f"<div class='bot'><b>JobMatchAI</b><div style='margin-top:6px'>{m['text']}</div></div>",
-    #                     unsafe_allow_html=True)
 
 with tabs[3]:
     st.header("Insights & Charts")
