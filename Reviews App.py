@@ -8,6 +8,7 @@ import pickle
 from PIL import Image
 from io import BytesIO
 from openai import OpenAI
+from ChatBot import handle_commands, get_top_company, analyze_role, get_company_info, list_commands
 from sentence_transformers import SentenceTransformer, util
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -370,24 +371,12 @@ with tabs[1]:
             st.plotly_chart(fig, use_container_width=True)
 
 with tabs[2]:
-    context_df = (
-        df_transform.groupby("Company_Name")
-        .agg({
-            "Cleaned Rating": "mean",
-            "Employment_Type": lambda x: x.mode().iloc[0] if not x.mode().empty else "N/A",
-            "Role_Type": lambda x: x.mode().iloc[0] if not x.mode().empty else "N/A",
-            "Job Title Clean": lambda x: ', '.join(x.head(2))
-        })
-        .reset_index()
-        .sort_values(by="Cleaned Rating", ascending=False)
-        .head(20)
-    )
-    context_summary = context_df.to_string(index=False)
+
     st.header("Chat with JobMatchAI")
 
     if "message" not in st.session_state:
         st.session_state.message = [
-            {"role": "assistance", "content": "Hey I'm JobMatchAI. Ask me about companies, roles or job trends"}
+            {"role": "assistance", "content": "Hey I'm JobMatchAI. Ask me about companies, roles or job trends. Type /help to see what i can do"}
         ]
     # display History
     for msg in st.session_state.message:
@@ -398,36 +387,20 @@ with tabs[2]:
     chat_col1, chat_col2 = st.columns([3, 1])
 
     with chat_col1:
-        if prompt := st.chat_input("Ask about job recommendations, companies, or internship advice!!"):
+        if prompt := st.chat_input("Enter a command (e.g. /top_company or /analyze_role internship)!!"):
             st.session_state.message.append({"role": "user", "content": prompt})
-
-            contextual_prompt = f"""
-                    You are JobMatchAI, a helpful career insights assistant.
-
-                    Here’s some recent dataset info about companies, job titles, and ratings:
-                    {context_summary}
-
-                    Now answer the following user query in a clear, concise, data-driven way:
-                    {prompt}
-                    """
             with st.chat_message("user"):
                 st.markdown(prompt)
 
-            # AI Response
+            parts = prompt.split(" ", 1)
+            command = parts[0]
+            args = parts[1] if len(parts) > 1 else None
+
+            response = handle_commands(command, args)
+            st.session_state.message.append({"role": "assistant", "content": response})
+
             with st.chat_message("assistant"):
-                response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                    {"role": "system", "content": "You are JobMatchAI, a professional data analyst that gives job insights."},
-                    {"role": "user", "content": contextual_prompt}
-                ]
-                )
-                reply = response.choices[0].message.content
-                st.markdown(reply)
-
-                # store assistance message
-            st.session_state.messages.append({"role": "assistant", "content": reply})
-
+                st.markdown(response)
 
     with chat_col2:
         st.markdown(
@@ -444,7 +417,6 @@ with tabs[2]:
             """,
             unsafe_allow_html=True
         )
-
 
 with tabs[3]:
     st.header("Insights & Charts")
