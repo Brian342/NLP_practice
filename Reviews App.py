@@ -3,15 +3,12 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import time
-import random
 import pickle
 from PIL import Image
 from io import BytesIO
 from openai import OpenAI
 from ChatBot import handle_commands, get_top_company, analyze_role, get_company_info, list_commands
 from sentence_transformers import SentenceTransformer, util
-
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 
 @st.cache_resource
@@ -371,12 +368,12 @@ with tabs[1]:
             st.plotly_chart(fig, use_container_width=True)
 
 with tabs[2]:
-
     st.header("Chat with JobMatchAI")
 
     if "message" not in st.session_state:
         st.session_state.message = [
-            {"role": "assistance", "content": "Hey I'm JobMatchAI. Ask me about companies, roles or job trends. Type /help to see what i can do"}
+            {"role": "assistance",
+             "content": "Hey I'm JobMatchAI. Ask me about companies, roles or job trends. Type /help to see what i can do"}
         ]
     # display History
     for msg in st.session_state.message:
@@ -430,11 +427,7 @@ with tabs[3]:
 
         # Role Type counts
         st.subheader("Role Type Counts")
-        # role_counts = (
-        #     df['Role_Type']
-        #     .value_counts()
-        #     .reset_index()
-        # )
+
         role = df_transform['Role_Type'].value_counts().reset_index()
         role.columns = ['Role_Type', 'Count']
 
@@ -456,4 +449,4 @@ with tabs[4]:
         "- Model: sentence-transformers (replace with your model)\n- Explainability: token overlap + token similarity heatmaps\n- Embeddings are recommended to be cached (FAISS/Annoy) for production")
     if st.button("Clear chat & cache"):
         st.session_state.message = []
-        st.experimental_rerun()
+
