@@ -73,13 +73,13 @@ def list_commands():
 
 
 def handle_commands(command, args=None):
-    if command == "/top_company":
+    if command == "top_company":
         return get_top_company()
-    elif command == "/analyze_role":
+    elif command == "analyze_role":
         return analyze_role(args or "")
-    elif command == "/company_info":
+    elif command == "company_info":
         return get_company_info(args or "")
-    elif command == "/help":
+    elif command == "help":
         return list_commands()
     else:
         return "Unknown Command. Try /help for available commands"
