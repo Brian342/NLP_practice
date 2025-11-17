@@ -403,8 +403,8 @@ with tabs[2]:
         st.markdown(
             """
             <div class='card' style='padding:10px;border-radius:10px;background-color:#f7f9fc;'>
-                <b>💡 Chat Tips:</b>
-                <ul style='margin:5px 0 0 15px'>
+                <b>Chat Tips:</b>
+                <ul style='margin:5px 0 0 15px; background-color:black'>
                     <li>Ask for remote internships</li>
                     <li>Get company insights</li>
                     <li>Find top-rated roles</li>
