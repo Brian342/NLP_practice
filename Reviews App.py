@@ -384,7 +384,7 @@ with tabs[2]:
     chat_col1, chat_col2 = st.columns([3, 1])
 
     with chat_col1:
-        if prompt := st.chat_input("Enter a command (e.g. /top_company or /analyze_role internship)!!"):
+        if prompt := st.chat_input("Enter a command (e.g. top_company or analyze_role internship)!!"):
             st.session_state.message.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
                 st.markdown(prompt)
@@ -402,9 +402,9 @@ with tabs[2]:
     with chat_col2:
         st.markdown(
             """
-            <div class='card' style='padding:10px;border-radius:10px;background-color:#f7f9fc;'>
+            <div class='card' style='padding:10px;border-radius:10px;background-color:#3D4E64;'>
                 <b>Chat Tips:</b>
-                <ul style='margin:5px 0 0 15px; background-color:black'>
+                <ul style='margin:5px 0 0 15px'>
                     <li>Ask for remote internships</li>
                     <li>Get company insights</li>
                     <li>Find top-rated roles</li>

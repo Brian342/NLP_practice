@@ -65,10 +65,10 @@ def get_company_info(name):
 def list_commands():
     return """
           **Available Commands**
-        - `/top_company` → returns the best-rated company
-        - `/analyze_role [role]` → Find companies hiring for a specific role
-        - `/company_info [company]` → Get detailed info about a company
-        - `/help` → Show this list
+        - `top_company` → returns the best-rated company
+        - `analyze_role [role]` → Find companies hiring for a specific role
+        - `company_info [company]` → Get detailed info about a company
+        - `help` → Show this list
         """
 
 
