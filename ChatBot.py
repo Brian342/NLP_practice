@@ -35,7 +35,7 @@ context_df = (
 
 def get_top_company():
     best = context_df.iloc[0]
-    return f"The Top-Rated company is **{best["Company_Name"]}** with a rating of {best["Cleaned Rating"]:.2f}/5 rating"
+    return f"The Top-Rated company is {best["Company_Name"]} with a rating of {best["Cleaned Rating"]:.2f}/5 rating"
 
 
 def analyze_role(role):
@@ -45,7 +45,7 @@ def analyze_role(role):
     res = matches.head(5)
     out = "\n".join(
         [f"- **{r.Company_Name}** ({r.Role_Type}) — {r['Cleaned Rating']:.1f}/5" for _, r in res.iterrows()])
-    return f" Top companies offering roles like **{role}**:\n{out}"
+    return f" Top companies offering roles like {role}:\n{out}"
 
 
 def get_company_info(name):
